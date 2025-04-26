@@ -79,7 +79,7 @@ class Controller(Generic[Context]):
 
 		# Request Human Help Action
 		@self.registry.action('Request human help')
-		async def request_human_help(message: str, instructions: str):
+		def request_human_help(message: str, instructions: str):
 		    """
 		    Display a popup message to the user requesting help, wait for their action,
 		    and continue when they click a button.
