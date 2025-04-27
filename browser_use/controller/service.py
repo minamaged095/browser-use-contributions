@@ -4,7 +4,8 @@ import json
 import logging
 import re
 import threading
-import tkinter as tk
+import time
+import easygui
 from typing import Dict, Generic, Optional, Tuple, Type, TypeVar, cast
 
 from langchain_core.language_models.chat_models import BaseChatModel
@@ -79,90 +80,59 @@ class Controller(Generic[Context]):
 			async def done(params: DoneAction):
 				return ActionResult(is_done=True, success=params.success, extracted_content=params.text)
 
-		# Request Human Help Action
+
+
 		@self.registry.action('Request human help')
-		def request_human_help(message: str, instructions: str):
-		    """
-		    Display a popup message to the user requesting help, wait for their action,
-		    and continue when they click a button.
-		    
-		    Parameters:
-		        message (str): The main message explaining what help is needed
-		        instructions (str, optional): Additional instructions for the user
-		    
-		    Returns:
-		        str: The response from the user (either "completed" or "cancelled")
-		    """
-		    global user_responded, user_response
-		    # message = "dfd"
-		    # instructions = "asdwsdws"
-		    # Reset state
-		    user_responded = False
-		    user_response = None
-		    
-		    # Function to create and show the popup in a separate thread
-		    def show_popup():
-		        # Create the main window
-		        popup = tk.Tk()
-		        popup.title("Human Assistance Required")
-		        
-		        # Set window size and position
-		        window_width = 400
-		        window_height = 250
-		        screen_width = popup.winfo_screenwidth()
-		        screen_height = popup.winfo_screenheight()
-		        center_x = int(screen_width / 2 - window_width / 2)
-		        center_y = int(screen_height / 2 - window_height / 2)
-		        popup.geometry(f'{window_width}x{window_height}+{center_x}+{center_y}')
-		        
-		        # Make the window stay on top
-		        popup.attributes("-topmost", True)
-		        
-		        # Add message
-		        tk.Label(popup, text=message, wraplength=380, pady=10).pack()
-		        
-		        # Add instructions if provided
-		        if instructions:
-		            tk.Label(popup, text=instructions, wraplength=380, pady=10).pack()
-		        
-		        # Add response frame
-		        button_frame = tk.Frame(popup)
-		        button_frame.pack(pady=20)
-		        
-		        # Button handlers
-		        def on_complete():
-		            global user_responded, user_response
-		            user_response = "completed"
-		            user_responded = True
-		            popup.destroy()
-		        
-		        def on_cancel():
-		            global user_responded, user_response
-		            user_response = "cancelled"
-		            user_responded = True
-		            popup.destroy()
-		        
-		        # Add buttons
-		        tk.Button(button_frame, text="Task Completed", command=on_complete, 
-		                  bg="green", fg="white", padx=10, pady=5).pack(side=tk.LEFT, padx=10)
-		        tk.Button(button_frame, text="Cancel", command=on_cancel,
-		                  bg="red", fg="white", padx=10, pady=5).pack(side=tk.LEFT, padx=10)
-		        
-		        # Start the main loop
-		        popup.mainloop()
-		    
-		    # Launch popup in a separate thread
-		    popup_thread = threading.Thread(target=show_popup)
-		    popup_thread.daemon = True
-		    popup_thread.start()
-		    
-		    # Wait for user to respond
-		    while not user_responded:
-		        threading.Event().wait(0.1)  # Wait a bit to avoid high CPU usage
+		def request_human_help(message: str, instructions: str = ""):
+			"""
+			Display a popup message to the user requesting help, wait for their action,
+			and continue when they click a button.
+			
+			Parameters:
+				message (str): The main message explaining what help is needed
+				instructions (str, optional): Additional instructions for the user
+			
+			Returns:
+				str: The response from the user (either "completed" or "cancelled")
+			"""
+			user_responded = False
+			user_response = None
+			
+			# Function to create and show the popup in a separate thread
+			def show_popup():
+				nonlocal user_responded, user_response
+				
+				# Create the full message
+				full_message = message
+				if instructions:
+					full_message += "\n\n" + instructions
+				
+				# Show the popup and get response
+				reply = easygui.buttonbox(
+					msg=full_message,
+					title="Human Assistance Required",
+					choices=["Task Completed", "Cancel"]
+				)
+				
+				# Process the response
+				if reply == "Task Completed":
+					user_response = "completed"
+				else:
+					user_response = "cancelled"
+				
+				user_responded = True
+			
+			# Launch popup in a separate thread
+			popup_thread = threading.Thread(target=show_popup)
+			popup_thread.daemon = True
+			popup_thread.start()
+			
+			# Wait for user to respond
+			while not user_responded:
+				time.sleep(0.1)  # Wait a bit to avoid high CPU usage
 
-		    return user_response
-
-		
+			return user_response
+	
 		# Basic Navigation Actions
 		@self.registry.action(
 			'Search the query in Google in the current tab, the query should be a search query like humans search in Google, concrete and not vague or super long. More the single most important items. ',

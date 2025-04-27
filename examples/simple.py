@@ -17,7 +17,7 @@ llm = ChatOpenAI(
 	model='gpt-4o',
 	temperature=0.0,
 )
-task = 'Go to kayak.com and find the cheapest flight from Zurich to San Francisco on 2025-05-01'
+task = """  get human help"""
 
 agent = Agent(task=task, llm=llm)
 
