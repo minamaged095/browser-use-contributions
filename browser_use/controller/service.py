@@ -80,8 +80,6 @@ class Controller(Generic[Context]):
 			async def done(params: DoneAction):
 				return ActionResult(is_done=True, success=params.success, extracted_content=params.text)
 
-
-
 		@self.registry.action('Request human help')
 		def request_human_help(message: str, instructions: str = ""):
 			"""
@@ -98,41 +96,37 @@ class Controller(Generic[Context]):
 			user_responded = False
 			user_response = None
 			
-			# Function to create and show the popup in a separate thread
 			def show_popup():
 				nonlocal user_responded, user_response
 				
-				# Create the full message
-				full_message = message
+				# Build a little ✨header✨ with emojis
+				header = "🚨  Human Assistance Required  🚨"
+				full_message = f"{header}\n\n💡 {message}"
 				if instructions:
-					full_message += "\n\n" + instructions
+					full_message += f"\n\n🔍 {instructions}"
 				
-				# Show the popup and get response
+				# Pass a custom icon (just drop a PNG in your project)
+				icon_path = "assets/help_icon.png"  # <-- replace with your colorful PNG
+				
 				reply = easygui.buttonbox(
 					msg=full_message,
-					title="Human Assistance Required",
-					choices=["Task Completed", "Cancel"]
+					title="🆘 Need Your Help!",
+					choices=["✅ Task Completed", "❌ Cancel"],
 				)
 				
-				# Process the response
-				if reply == "Task Completed":
-					user_response = "completed"
-				else:
-					user_response = "cancelled"
-				
+				user_response = "completed" if reply and "Completed" in reply else "cancelled"
 				user_responded = True
 			
-			# Launch popup in a separate thread
-			popup_thread = threading.Thread(target=show_popup)
-			popup_thread.daemon = True
+			# Fire off the GUI thread
+			popup_thread = threading.Thread(target=show_popup, daemon=True)
 			popup_thread.start()
 			
-			# Wait for user to respond
+			# Wait in the background until the user clicks something
 			while not user_responded:
-				time.sleep(0.1)  # Wait a bit to avoid high CPU usage
-
+				time.sleep(0.1)
+			
 			return user_response
-	
+
 		# Basic Navigation Actions
 		@self.registry.action(
 			'Search the query in Google in the current tab, the query should be a search query like humans search in Google, concrete and not vague or super long. More the single most important items. ',
