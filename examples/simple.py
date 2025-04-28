@@ -28,7 +28,7 @@ llm = ChatOpenAI(
 task = 'ask for human help then Go to kayak.com and find the cheapest flight from Zurich to San Francisco on 2025-05-01'
 
 # agent = Agent(task=task, llm=llm, allow_yield_to_human=True, human_help_callback=cli_human_help_handler)
-agent = Agent(task=task, llm=llm, allow_yield_to_human=True)
+agent = Agent(task=task, llm=llm)
 
 
 async def main():
