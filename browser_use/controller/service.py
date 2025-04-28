@@ -3,9 +3,6 @@ import enum
 import json
 import logging
 import re
-import threading
-import time
-import easygui
 from typing import Dict, Generic, Optional, Tuple, Type, TypeVar, cast
 
 from langchain_core.language_models.chat_models import BaseChatModel
@@ -51,6 +48,9 @@ class Controller(Generic[Context]):
 
 		"""Register all default browser actions"""
 
+		# Initialize these attributes (they'll be set by Agent later)
+		self.allow_yield_to_human = False
+		# self.human_help_callback = None
 		if output_model is not None:
 			# Create a new model that extends the output model with success parameter
 			class ExtendedOutputModel(BaseModel):  # type: ignore
@@ -81,51 +81,39 @@ class Controller(Generic[Context]):
 				return ActionResult(is_done=True, success=params.success, extracted_content=params.text)
 
 		@self.registry.action('Request human help')
-		def request_human_help(message: str, instructions: str = ""):
+		async def request_human_help(message: str, instructions: str):
 			"""
-			Display a popup message to the user requesting help, wait for their action,
-			and continue when they click a button.
-			
-			Parameters:
-				message (str): The main message explaining what help is needed
-				instructions (str, optional): Additional instructions for the user
-			
-			Returns:
-				str: The response from the user (either "completed" or "cancelled")
+			Yield to the embedder over a simple Python callback.
 			"""
-			user_responded = False
-			user_response = None
+			# Access the agent through the reference
+			if not hasattr(self, 'agent') or not self.agent.allow_yield_to_human:
+				return "Human help is not enabled."
+
+			# self.on_step_start()
+			# tell the agent to pause its run‐loop
+			self.agent.pause()
+			# notify any on_step_start hook (e.g. UI can show “waiting for human”)
+			# self.on_step_start()
+
+			# if not hasattr(self.agent, 'human_help_callback') or self.agent.human_help_callback is None:
+			# 	raise RuntimeError("Agent was not given human_help_callback")
 			
-			def show_popup():
-				nonlocal user_responded, user_response
-				
-				# Build a little ✨header✨ with emojis
-				header = "🚨  Human Assistance Required  🚨"
-				full_message = f"{header}\n\n💡 {message}"
-				if instructions:
-					full_message += f"\n\n🔍 {instructions}"
-				
-				# Pass a custom icon (just drop a PNG in your project)
-				icon_path = "assets/help_icon.png"  # <-- replace with your colorful PNG
-				
-				reply = easygui.buttonbox(
-					msg=full_message,
-					title="🆘 Need Your Help!",
-					choices=["✅ Task Completed", "❌ Cancel"],
-				)
-				
-				user_response = "completed" if reply and "Completed" in reply else "cancelled"
-				user_responded = True
-			
-			# Fire off the GUI thread
-			popup_thread = threading.Thread(target=show_popup, daemon=True)
-			popup_thread.start()
-			
-			# Wait in the background until the user clicks something
-			while not user_responded:
-				time.sleep(0.1)
-			
-			return user_response
+			# result = self.agent.human_help_callback(message, instructions)
+
+			def cli_human_help_handler(msg: str, inst: str) -> str:
+				prompt = msg
+				if inst:
+					prompt += "\n" + inst
+				prompt += "\n> "  # terminal prompt
+				return input(prompt).strip()
+			result = cli_human_help_handler(message, instructions)
+			# self.on_step_end()
+			# notify any on_step_end hook (e.g. UI can hide “waiting”)
+			# self.on_step_end()
+			# resume the agent’s run‐loop
+			self.agent.resume()
+
+			return result
 
 		# Basic Navigation Actions
 		@self.registry.action(
