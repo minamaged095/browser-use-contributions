@@ -94,6 +94,8 @@ class Agent(Generic[Context]):
 		task: str,
 		llm: BaseChatModel,
 		# Optional parameters
+        allow_yield_to_human: bool = False,
+        # human_help_callback: Callable[[str, str], str] | None = None,
 		browser: Browser | None = None,
 		browser_context: BrowserContext | None = None,
 		controller: Controller[Context] = Controller(),
@@ -160,6 +162,12 @@ class Agent(Generic[Context]):
 		self.task = task
 		self.llm = llm
 		self.controller = controller
+
+		self.allow_yield_to_human = allow_yield_to_human
+		# self.register_new_step_callback = register_new_step_callback
+		# self.human_help_callback = human_help_callback
+		controller.agent = self
+		
 		self.sensitive_data = sensitive_data
 
 		self.settings = AgentSettings(
@@ -185,6 +193,9 @@ class Agent(Generic[Context]):
 			is_planner_reasoning=is_planner_reasoning,
 			extend_planner_system_message=extend_planner_system_message,
 		)
+
+		# to allow human in loop
+		self.controller.agent = self  # Give the controller a reference to the agent
 
 		# Memory settings
 		self.enable_memory = enable_memory
