@@ -50,7 +50,6 @@ class Controller(Generic[Context]):
 
 		# Initialize these attributes (they'll be set by Agent later)
 		self.allow_yield_to_human = False
-		# self.human_help_callback = None
 		if output_model is not None:
 			# Create a new model that extends the output model with success parameter
 			class ExtendedOutputModel(BaseModel):  # type: ignore
