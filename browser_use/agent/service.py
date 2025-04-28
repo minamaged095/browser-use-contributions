@@ -97,7 +97,7 @@ class Agent(Generic[Context]):
         allow_yield_to_human: bool = False,
 		browser: Browser | None = None,
 		browser_context: BrowserContext | None = None,
-		controller: Controller[Context] = Controller(),
+		controller: Controller[Context] = None,  # Make this None by default
 		# Initial agent run parameters
 		sensitive_data: Optional[Dict[str, str]] = None,
 		initial_actions: Optional[List[Dict[str, Dict[str, Any]]]] = None,
@@ -160,10 +160,16 @@ class Agent(Generic[Context]):
 		# Core components
 		self.task = task
 		self.llm = llm
-		self.controller = controller
 
 		self.allow_yield_to_human = allow_yield_to_human
-		controller.agent = self
+		# Conditionally create controller based on allow_yield_to_human
+		if controller is None:
+			exclude_actions = [] if allow_yield_to_human else ['request_human_help']
+			self.controller = Controller(exclude_actions=exclude_actions)
+		else:
+			self.controller = controller
+		
+		self.controller.agent = self
 		
 		self.sensitive_data = sensitive_data
 
