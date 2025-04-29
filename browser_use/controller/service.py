@@ -86,30 +86,19 @@ class Controller(Generic[Context]):
 			"""
 			# Access the agent through the reference
 			if not hasattr(self, 'agent') or not self.agent.allow_yield_to_human:
-				return "Human help is not enabled."
+				return 'Human help is not enabled.'
 
-			# self.on_step_start()
 			# tell the agent to pause its run‐loop
 			self.agent.pause()
-			# notify any on_step_start hook (e.g. UI can show “waiting for human”)
-			# self.on_step_start()
-
-			# if not hasattr(self.agent, 'human_help_callback') or self.agent.human_help_callback is None:
-			# 	raise RuntimeError("Agent was not given human_help_callback")
-			
-			# result = self.agent.human_help_callback(message, instructions)
 
 			def cli_human_help_handler(msg: str, inst: str) -> str:
 				prompt = msg
 				if inst:
-					prompt += "\n" + inst
-				prompt += "\n> "  # terminal prompt
+					prompt += '\n' + inst
+				prompt += '\n> '  # terminal prompt
 				return input(prompt).strip()
+
 			result = cli_human_help_handler(message, instructions)
-			# self.on_step_end()
-			# notify any on_step_end hook (e.g. UI can hide “waiting”)
-			# self.on_step_end()
-			# resume the agent’s run‐loop
 			self.agent.resume()
 
 			return result

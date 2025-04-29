@@ -94,7 +94,7 @@ class Agent(Generic[Context]):
 		task: str,
 		llm: BaseChatModel,
 		# Optional parameters
-        allow_yield_to_human: bool = False,
+		allow_yield_to_human: bool = False,
 		browser: Browser | None = None,
 		browser_context: BrowserContext | None = None,
 		controller: Controller[Context] = None,  # Make this None by default
@@ -168,9 +168,9 @@ class Agent(Generic[Context]):
 			self.controller = Controller(exclude_actions=exclude_actions)
 		else:
 			self.controller = controller
-		
+
 		self.controller.agent = self
-		
+
 		self.sensitive_data = sensitive_data
 
 		self.settings = AgentSettings(
