@@ -17,7 +17,9 @@ llm = ChatOpenAI(
 	model='gpt-4o',
 	temperature=0.0,
 )
-task = """  get human help"""
+task = """go to https://narmertech.com and clcik on book a call, book a call for 3rd or april 2022
+If you are stuck request human help if you have too many failures instead of stopping request human help
+after getting human assistance continue"""
 
 agent = Agent(task=task, llm=llm)
 
